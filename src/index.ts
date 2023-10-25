@@ -24,13 +24,13 @@ export class Matrix {
    * @param rowCount number of rows
    * @param floatData matrix data in row-major order. Filled with random values in [-1, 1) if undefined.
    */
-  constructor(colCount: number, rowCount: number, floatData?: Float32Array) {
+  constructor(colCount: number, rowCount: number, floatData?: Float32Array | number) {
     this.colCount = colCount;
     this.rowCount = rowCount;
     const data = new Uint8Array(
       (
-        floatData ??
-        new Float32Array(colCount * rowCount).map(() => Math.random() * 2 - 1)
+        typeof floatData === "object" ? floatData :
+        new Float32Array(colCount * rowCount).map(() => floatData ?? Math.random() * 2 - 1) 
       ).buffer
     );
     this.texture = gl.createTexture();
