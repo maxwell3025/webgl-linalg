@@ -2,8 +2,10 @@ import {
   canvasHeight,
   canvasWidth,
   copyTexture,
+  debugChannel,
   fillMesh,
   gl,
+  matMul,
   renderTexture,
 } from "./init.js";
 
@@ -15,15 +17,20 @@ export class Matrix {
   context: WebGL2RenderingContext;
   buffer: WebGLFramebuffer;
   texture: WebGLTexture;
-  width: number;
-  height: number;
-  constructor(width: number, height: number, floatData?: Float32Array) {
-    this.width = width;
-    this.height = height;
+  colCount: number;
+  rowCount: number;
+  /**
+   * @param colCount number of columns
+   * @param rowCount number of rows
+   * @param floatData matrix data in row-major order. Filled with random values in [-1, 1) if undefined.
+   */
+  constructor(colCount: number, rowCount: number, floatData?: Float32Array) {
+    this.colCount = colCount;
+    this.rowCount = rowCount;
     const data = new Uint8Array(
       (
         floatData ??
-        new Float32Array(width * height).map(() => Math.random() * 2 - 1)
+        new Float32Array(colCount * rowCount).map(() => Math.random() * 2 - 1)
       ).buffer
     );
     this.texture = gl.createTexture();
@@ -35,15 +42,15 @@ export class Matrix {
     if (data.constructor !== Uint8Array) {
       console.error("IMPROPER DATA TYPE");
     }
-    if (data.length != width * height * 4) {
+    if (data.length != colCount * rowCount * 4) {
       console.error("IMPROPERLY SIZED DATA");
     }
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
       gl.RGBA8UI,
-      width,
-      height,
+      colCount,
+      rowCount,
       0,
       gl.RGBA_INTEGER,
       gl.UNSIGNED_BYTE,
@@ -62,19 +69,49 @@ export class Matrix {
       0
     );
   }
-  public bind(index: number) {
+  public bind(index: number, program: WebGLProgram) {
+    const bindingUniformLocation = gl.getUniformLocation(
+      program,
+      `tex${index}`
+    )
     const widthUniformLocation = gl.getUniformLocation(
-      renderTexture,
+      program,
       `width${index}`
     );
     const heightUniformLocation = gl.getUniformLocation(
-      renderTexture,
+      program,
       `height${index}`
     );
-    gl.uniform1f(widthUniformLocation, this.width);
-    gl.uniform1f(heightUniformLocation, this.height);
+    gl.uniform1f(widthUniformLocation, this.colCount);
+    gl.uniform1f(heightUniformLocation, this.rowCount);
+    gl.uniform1i(bindingUniformLocation, index);
     gl.activeTexture(gl.TEXTURE0 + index);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
+  }
+  /**
+   * displays floating point values to canvas
+   */
+  public displayChannel(channel: number) {
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
+
+    const aVertexPosition = gl.getAttribLocation(
+      debugChannel[channel],
+      "aVertexPosition"
+    );
+    gl.useProgram(debugChannel[channel]);
+    const widthUniformLocation = gl.getUniformLocation(debugChannel[channel], "width");
+    const heightUniformLocation = gl.getUniformLocation(debugChannel[channel], "height");
+    gl.uniform1f(widthUniformLocation, canvasWidth);
+    gl.uniform1f(heightUniformLocation, canvasHeight);
+    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aVertexPosition);
+    this.bind(0, debugChannel[channel]);
+    bindDefaultTarget();
+
+    console.log("debug rendering");
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   /**
    * displays floating point values to canvas
@@ -98,20 +135,18 @@ export class Matrix {
     gl.uniform1f(heightUniformLocation, canvasHeight);
     gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aVertexPosition);
-    this.bind(0);
+    this.bind(0, renderTexture);
     bindDefaultTarget();
 
     console.log("debug rendering");
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   /**
-   * TODO
+   * Copies data into target matrix
    */
-  public executeCopy(target: Matrix) {
-    target.bindTarget();
-    if (target.width != this.width || target.height != this.height) {
-      console.error("Incompatible Dimensions!");
-    }
+  public copy(): Matrix {
+    const result = new Matrix(this.colCount, this.rowCount)
+    result.bindTarget();
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
@@ -123,39 +158,97 @@ export class Matrix {
     gl.useProgram(copyTexture);
     const widthUniformLocation = gl.getUniformLocation(copyTexture, "width");
     const heightUniformLocation = gl.getUniformLocation(copyTexture, "height");
-    gl.uniform1f(widthUniformLocation, target.width);
-    gl.uniform1f(heightUniformLocation, target.height);
+    gl.uniform1f(widthUniformLocation, result.colCount);
+    gl.uniform1f(heightUniformLocation, result.rowCount);
     gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aVertexPosition);
-    this.bind(0);
+    this.bind(0, renderTexture);
 
     console.log("copying");
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    return result;
+  }
+  public mul(rhs: Matrix): Matrix{
+    if (this.colCount != rhs.rowCount){
+      console.error("Incompatible Dimensions!");
+    }
+    const result = new Matrix(rhs.colCount, this.rowCount)
+    result.bindTarget()
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
+
+    const aVertexPosition = gl.getAttribLocation(
+      matMul,
+      "aVertexPosition"
+    );
+    gl.useProgram(matMul);
+    const widthUniformLocation = gl.getUniformLocation(matMul, "width");
+    const heightUniformLocation = gl.getUniformLocation(matMul, "height");
+    gl.uniform1f(widthUniformLocation, result.colCount);
+    gl.uniform1f(heightUniformLocation, result.rowCount);
+    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aVertexPosition);
+
+
+    this.bind(0, matMul);
+    rhs.bind(1, matMul);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    return result;
   }
 }
 
-const matrixA = new Matrix(3, 3, new Float32Array([0, 0, 0, 0, 1, 0, 0, 0, 0]));
-const matrixB = new Matrix(
-  4,
-  4,
-  new Float32Array([0, 0, -1, 1, 0, 0, 0, 0, 1, 0, -0.5, 0, 0, 0.5, 0, 0])
-);
-const matrixC = new Matrix(3, 3);
+// --------------------- TESTS -----------------------
 
-matrixA.executeCopy(matrixC);
+const matrixA = new Matrix(3, 4, new Float32Array([
+  0, 1, 0,
+  1, 0, 0,
+  0, 0, 1,
+  0, 0, 0
+]));
+
+const matrixB = new Matrix(4, 3, new Float32Array([
+  1, 0, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+]));
+
+const matrixC = matrixA.mul(matrixB);
+
+// ----------------- Display -------------------
+
+const label = document.createElement("div")
+document.body.appendChild(label);
 const loopArray = [
   () => {
-    console.log('a')
+    label.innerText = 'A';
     matrixA.display();
   },
   () => {
-    console.log('b')
+    label.innerText = 'B';
     matrixB.display();
   },
   () => {
-    console.log('c')
+    label.innerText = 'C';
     matrixC.display();
   },
+  // () => {
+  //   label.innerText = 'C0';
+  //   matrixC.displayChannel(0);
+  // },
+  // () => {
+  //   label.innerText = 'C1';
+  //   matrixC.displayChannel(1);
+  // },
+  // () => {
+  //   label.innerText = 'C2';
+  //   matrixC.displayChannel(2);
+  // },
+  // () => {
+  //   label.innerText = 'C3';
+  //   matrixC.displayChannel(3);
+  // },
 ];
 let index = 0;
 setInterval(() => {

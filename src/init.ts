@@ -42,56 +42,137 @@ void main() {
     gl_Position = vec4(aVertexPosition, 1.0, 1.0);
 }
 `;
-export const renderTexture = loadProgram(
-  vertexPassthrough,
-  `#version 300 es
-precision highp float;
-precision lowp usampler2D;
-uniform usampler2D tex;
-uniform float width;
-uniform float height;
-out vec4 fragColor;
 
-float toFloat(uvec4 data){
+const encodeDecode = `
+float decodeFloat(uvec4 data){
   uint fullValue =
   (data.x) +
   (data.y << 8) +
   (data.z << 16) +
   (data.w << 24);
-  float value = uintBitsToFloat(fullValue & 0x7fffffffu);
-  if((fullValue & 0x80000000u) != 0u) value = -value;
+  float value = intBitsToFloat(int(fullValue));
   return value;
 }
 
+uvec4 encodeFloat(float value){
+  uint fullValue = uint(floatBitsToInt(value));
+  return uvec4(
+    fullValue >> 0 & 0xffu,
+    fullValue >> 8 & 0xffu,
+    fullValue >> 16 & 0xffu,
+    fullValue >> 24 & 0xffu
+  );
+}
+
+`
+export const renderTexture = loadProgram(
+  vertexPassthrough,
+  `#version 300 es
+precision highp float;
+precision lowp usampler2D;
+uniform usampler2D tex0;
+uniform float width;
+uniform float height;
+out vec4 fragColor;
+
+${encodeDecode}
+
 void main() {
-    vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
-    uvec4 rawdata = texture(tex, texelCoords);
-    float value = toFloat(rawdata);
-    // do whatever you want 
-    if(value > 0.0){
-        fragColor = vec4(value, 0.0, 0.0, 1.0);
-    } else {
-        fragColor = vec4(0.0, -value, -value, 1.0);
-    }
+  vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
+  texelCoords.y = 1.0 - texelCoords.y;
+  uvec4 rawdata = texture(tex0, texelCoords);
+  float value = decodeFloat(rawdata);
+  if(value > 0.0){
+    fragColor = vec4(value, 0.0, 0.0, 1.0);
+  } else {
+    fragColor = vec4(0.0, -value, -value, 1.0);
+  }
 }
 `
 );
+
+export const debugChannel = [0, 1, 2, 3].map(channel => loadProgram(
+  vertexPassthrough,
+  `#version 300 es
+precision highp float;
+precision lowp usampler2D;
+uniform usampler2D tex0;
+uniform float width;
+uniform float height;
+out vec4 fragColor;
+
+${encodeDecode}
+
+void main() {
+  vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
+  texelCoords.y = 1.0 - texelCoords.y;
+  float channelValue = float(texture(tex0, texelCoords).${['x', 'y', 'z', 'w'][channel]}) / 255.0;
+  fragColor = vec4(channelValue, channelValue, channelValue, 1.0);
+}
+`
+));
 
 export const copyTexture = loadProgram(
   vertexPassthrough,
   `#version 300 es
 precision highp float;
 precision lowp usampler2D;
-uniform usampler2D tex;
+uniform usampler2D tex0;
 uniform float width0;
 uniform float height0;
 uniform float width;
 uniform float height;
 out uvec4 fragColor;
 
+${encodeDecode}
+
 void main() {
-    fragColor = texture(tex, gl_FragCoord.xy / vec2(width, height));
+  vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
+  fragColor = texture(tex0, texelCoords);
 }
 `
 );
+export const matMul = loadProgram(
+  vertexPassthrough,
+  `#version 300 es
+precision highp float;
+precision lowp usampler2D;
+uniform usampler2D tex0;
+uniform usampler2D tex1;
+uniform float width0;
+uniform float height0;
+uniform float width1;
+uniform float height1;
+uniform float width;
+uniform float height;
+out uvec4 fragColor;
+
+${encodeDecode}
+
+void main() {
+  int col = int(gl_FragCoord.x);
+  int row = int(gl_FragCoord.y);
+  float sum = 0.0;
+  int i = 0;
+  while(i < int(width1)){
+    float lhsValue = decodeFloat(
+      texture(tex0, vec2(
+        (float(i)) / width0, //col
+        (float(row)) / height0 //row
+      ))
+    );
+    float rhsValue = decodeFloat(
+      texture(tex1, vec2(
+        (float(col)) / width1, //row
+        (float(i)) / height1 //row
+      ))
+    );
+    sum = sum + lhsValue * rhsValue;
+    i++;
+  }
+  fragColor = encodeFloat(sum);
+}
+`
+);
+
 export const fillMesh = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
