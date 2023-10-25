@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "typescript": "^5.2.2"
+  },
+  "name": "webgl-linalg",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
