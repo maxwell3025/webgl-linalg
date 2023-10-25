@@ -1,6 +1,7 @@
 import {
   canvasHeight,
   canvasWidth,
+  copyTexture,
   fillMesh,
   gl,
   renderTexture,
@@ -108,6 +109,9 @@ export class Matrix {
    */
   public executeCopy(target: Matrix) {
     target.bindTarget();
+    if (target.width != this.width || target.height != this.height) {
+      console.error("Incompatible Dimensions!");
+    }
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
@@ -116,12 +120,9 @@ export class Matrix {
       renderTexture,
       "aVertexPosition"
     );
-    gl.useProgram(renderTexture);
-    const widthUniformLocation = gl.getUniformLocation(renderTexture, "width");
-    const heightUniformLocation = gl.getUniformLocation(
-      renderTexture,
-      "height"
-    );
+    gl.useProgram(copyTexture);
+    const widthUniformLocation = gl.getUniformLocation(copyTexture, "width");
+    const heightUniformLocation = gl.getUniformLocation(copyTexture, "height");
     gl.uniform1f(widthUniformLocation, target.width);
     gl.uniform1f(heightUniformLocation, target.height);
     gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
@@ -133,34 +134,31 @@ export class Matrix {
   }
 }
 
-const matrixA = new Matrix(
-  3,
-  3,
-  new Float32Array([0, 0, 0, 0, 1, 0, 0, 0, 0])
-);
+const matrixA = new Matrix(3, 3, new Float32Array([0, 0, 0, 0, 1, 0, 0, 0, 0]));
 const matrixB = new Matrix(
   4,
   4,
   new Float32Array([0, 0, -1, 1, 0, 0, 0, 0, 1, 0, -0.5, 0, 0, 0.5, 0, 0])
 );
-// matrixA.executeCopy(matrixB);
-setTimeout(() => {
-  matrixB.display();
-}, 0);
-setTimeout(() => {
-  matrixA.display();
-}, 1000);
-setTimeout(() => {
-  gl.clear(gl.COLOR_BUFFER_BIT);
-}, 2000);
-setInterval(() => {
-  setTimeout(() => {
-    matrixB.display();
-  }, 0);
-  setTimeout(() => {
+const matrixC = new Matrix(3, 3);
+
+matrixA.executeCopy(matrixC);
+const loopArray = [
+  () => {
+    console.log('a')
     matrixA.display();
-  }, 1000);
-  setTimeout(() => {
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }, 2000);
-}, 3000);
+  },
+  () => {
+    console.log('b')
+    matrixB.display();
+  },
+  () => {
+    console.log('c')
+    matrixC.display();
+  },
+];
+let index = 0;
+setInterval(() => {
+  index = (index + 1) % loopArray.length;
+  loopArray[index]();
+}, 1000);

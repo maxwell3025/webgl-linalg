@@ -35,14 +35,15 @@ function loadProgram(vsSource: string, fsSource: string) {
   return shaderProgram;
 }
 
-export const renderTexture = loadProgram(
-  `#version 300 es
+const vertexPassthrough = `#version 300 es
 precision highp float;
 layout (location=0) in vec2 aVertexPosition;
 void main() {
     gl_Position = vec4(aVertexPosition, 1.0, 1.0);
 }
-`,
+`;
+export const renderTexture = loadProgram(
+  vertexPassthrough,
   `#version 300 es
 precision highp float;
 precision lowp usampler2D;
@@ -77,13 +78,7 @@ void main() {
 );
 
 export const copyTexture = loadProgram(
-  `#version 300 es
-precision highp float;
-layout (location=0) in vec2 aVertexPosition;
-void main() {
-    gl_Position = vec4(aVertexPosition, 1.0, 1.0);
-}
-`,
+  vertexPassthrough,
   `#version 300 es
 precision highp float;
 precision lowp usampler2D;
@@ -93,6 +88,7 @@ uniform float height0;
 uniform float width;
 uniform float height;
 out uvec4 fragColor;
+
 void main() {
     fragColor = texture(tex, gl_FragCoord.xy / vec2(width, height));
 }
