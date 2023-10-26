@@ -15,7 +15,7 @@ function unbindOut(program: WebGLProgram) {
   const heightUniformLocation = gl.getUniformLocation(program, "height");
   gl.uniform1f(widthUniformLocation, canvasWidth);
   gl.uniform1f(heightUniformLocation, canvasHeight);
-  gl.viewport(0, 0, canvasWidth, canvasHeight)
+  gl.viewport(0, 0, canvasWidth, canvasHeight);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.useProgram(null);
 }
@@ -31,11 +31,7 @@ export class Matrix {
    * @param rowCount number of rows
    * @param floatData matrix data in row-major order. Filled with random values in [-1, 1) if undefined.
    */
-  constructor(
-    colCount: number,
-    rowCount: number,
-    floatData?: Float32Array
-  ) {
+  constructor(colCount: number, rowCount: number, floatData?: Float32Array) {
     //initialize
     this.colCount = colCount;
     this.rowCount = rowCount;
@@ -43,7 +39,9 @@ export class Matrix {
     this.buffer = gl.createFramebuffer();
 
     //generate&format data
-    const data = floatData ? new Uint8Array(floatData.buffer) : new Uint8Array(colCount * rowCount * 4).fill(0);
+    const data = floatData
+      ? new Uint8Array(floatData.buffer)
+      : new Uint8Array(colCount * rowCount * 4).fill(0);
     if (data.constructor !== Uint8Array) {
       console.error("IMPROPER DATA TYPE");
     }
@@ -72,7 +70,7 @@ export class Matrix {
 
   public bindOut(program: WebGLProgram) {
     gl.useProgram(program);
-    gl.viewport(0, 0, this.colCount, this.rowCount)
+    gl.viewport(0, 0, this.colCount, this.rowCount);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.buffer);
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,

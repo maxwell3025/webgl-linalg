@@ -107,9 +107,8 @@ ${encodeDecode}
 void main() {
   vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
   texelCoords.y = 1.0 - texelCoords.y;
-  float channelValue = float(texture(tex0, texelCoords).${
-    ["x", "y", "z", "w"][channel]
-  }) / 255.0;
+  float channelValue = float(texture(tex0, texelCoords).${["x", "y", "z", "w"][channel]
+    }) / 255.0;
   fragColor = vec4(channelValue, channelValue, channelValue, 1.0);
 }
 `
