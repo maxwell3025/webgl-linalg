@@ -65,7 +65,7 @@ uvec4 encodeFloat(float value){
   );
 }
 `;
-export const renderTexture = loadProgram(
+export const showProgram = loadProgram(
   vertexPassthrough,
   `#version 300 es
 precision highp float;
@@ -91,7 +91,7 @@ void main() {
 `
 );
 
-export const debugChannel = [0, 1, 2, 3].map((channel) =>
+export const showChannelProgram = [0, 1, 2, 3].map((channel) =>
   loadProgram(
     vertexPassthrough,
     `#version 300 es
@@ -115,7 +115,7 @@ void main() {
   )
 );
 
-export const copyTexture = loadProgram(
+export const copyProgram = loadProgram(
   vertexPassthrough,
   `#version 300 es
 precision highp float;
@@ -135,7 +135,7 @@ void main() {
 }
 `
 );
-export const matMul = loadProgram(
+export const matMulProgram = loadProgram(
   vertexPassthrough,
   `#version 300 es
 precision highp float;
@@ -182,6 +182,7 @@ const fillMesh = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
 const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
+gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 export function executeProgram(program: WebGLProgram) {
   gl.useProgram(program);

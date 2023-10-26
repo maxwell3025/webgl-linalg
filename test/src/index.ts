@@ -1,6 +1,6 @@
 import { Matrix } from "../..";
 
-const N = 256;
+const N = 4;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl
 function erfinv(x: number) {
   var z;
@@ -79,11 +79,11 @@ document.body.appendChild(label);
 const loopArray = [
   () => {
     label.innerText = "A";
-    matrixA.display();
+    matrixA.show();
   },
   () => {
     label.innerText = "B";
-    matrixB.display();
+    matrixB.show();
   },
   () => {
     label.innerText = "C";
@@ -100,7 +100,7 @@ const loopArray = [
     const after2 = new Date().getTime();
     console.log(after2 - before2);
 
-    matrixC.display();
+    matrixC.show();
   },
 ];
 

@@ -57,9 +57,8 @@ uvec4 encodeFloat(float value){
     fullValue >> 24 & 0xffu
   );
 }
-
 `;
-export const renderTexture = loadProgram(vertexPassthrough, `#version 300 es
+export const showProgram = loadProgram(vertexPassthrough, `#version 300 es
 precision highp float;
 precision lowp usampler2D;
 uniform usampler2D tex0;
@@ -81,7 +80,7 @@ void main() {
   }
 }
 `);
-export const debugChannel = [0, 1, 2, 3].map(channel => loadProgram(vertexPassthrough, `#version 300 es
+export const showChannelProgram = [0, 1, 2, 3].map((channel) => loadProgram(vertexPassthrough, `#version 300 es
 precision highp float;
 precision lowp usampler2D;
 uniform usampler2D tex0;
@@ -94,11 +93,11 @@ ${encodeDecode}
 void main() {
   vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
   texelCoords.y = 1.0 - texelCoords.y;
-  float channelValue = float(texture(tex0, texelCoords).${['x', 'y', 'z', 'w'][channel]}) / 255.0;
+  float channelValue = float(texture(tex0, texelCoords).${["x", "y", "z", "w"][channel]}) / 255.0;
   fragColor = vec4(channelValue, channelValue, channelValue, 1.0);
 }
 `));
-export const copyTexture = loadProgram(vertexPassthrough, `#version 300 es
+export const copyProgram = loadProgram(vertexPassthrough, `#version 300 es
 precision highp float;
 precision lowp usampler2D;
 uniform usampler2D tex0;
@@ -115,7 +114,7 @@ void main() {
   fragColor = texture(tex0, texelCoords);
 }
 `);
-export const matMul = loadProgram(vertexPassthrough, `#version 300 es
+export const matMulProgram = loadProgram(vertexPassthrough, `#version 300 es
 precision highp float;
 precision lowp usampler2D;
 uniform usampler2D tex0;
@@ -158,6 +157,7 @@ const fillMesh = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
 const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
+gl.bindBuffer(gl.ARRAY_BUFFER, null);
 export function executeProgram(program) {
     gl.useProgram(program);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
