@@ -4,6 +4,7 @@ const canvas = document.createElement("canvas");
 canvas.setAttribute("width", `${canvasWidth}`);
 canvas.setAttribute("height", `${canvasHeight}`);
 document.querySelector("body").appendChild(canvas);
+
 export const gl = canvas.getContext("webgl2");
 if (gl === null) {
   console.error("Could not get a WebGL2 Context!");
@@ -63,8 +64,7 @@ uvec4 encodeFloat(float value){
     fullValue >> 24 & 0xffu
   );
 }
-
-`
+`;
 export const renderTexture = loadProgram(
   vertexPassthrough,
   `#version 300 es
@@ -91,9 +91,10 @@ void main() {
 `
 );
 
-export const debugChannel = [0, 1, 2, 3].map(channel => loadProgram(
-  vertexPassthrough,
-  `#version 300 es
+export const debugChannel = [0, 1, 2, 3].map((channel) =>
+  loadProgram(
+    vertexPassthrough,
+    `#version 300 es
 precision highp float;
 precision lowp usampler2D;
 uniform usampler2D tex0;
@@ -106,11 +107,14 @@ ${encodeDecode}
 void main() {
   vec2 texelCoords = gl_FragCoord.xy / vec2(width, height);
   texelCoords.y = 1.0 - texelCoords.y;
-  float channelValue = float(texture(tex0, texelCoords).${['x', 'y', 'z', 'w'][channel]}) / 255.0;
+  float channelValue = float(texture(tex0, texelCoords).${
+    ["x", "y", "z", "w"][channel]
+  }) / 255.0;
   fragColor = vec4(channelValue, channelValue, channelValue, 1.0);
 }
 `
-));
+  )
+);
 
 export const copyTexture = loadProgram(
   vertexPassthrough,
@@ -180,12 +184,12 @@ const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
 
-export function executeProgram(program: WebGLProgram){
-    gl.useProgram(program);
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    const aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
-    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(aVertexPosition);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.useProgram(null)
+export function executeProgram(program: WebGLProgram) {
+  gl.useProgram(program);
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  const aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
+  gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPosition);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.useProgram(null);
 }
