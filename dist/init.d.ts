@@ -1,5 +1,4 @@
-export declare const canvasWidth = 256;
-export declare const canvasHeight = 256;
+export declare const canvas: HTMLCanvasElement;
 export declare const gl: WebGL2RenderingContext;
 export declare const floatExtension: EXT_color_buffer_float;
 export declare const showProgram: WebGLProgram;

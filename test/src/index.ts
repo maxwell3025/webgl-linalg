@@ -1,10 +1,14 @@
-import { Matrix } from "../..";
+import { Matrix, matMulCanvas } from "../..";
+
+matMulCanvas.setAttribute("width", "512")
+matMulCanvas.setAttribute("height", "512")
+// document.body.appendChild(matMulCanvas);
 
 const startTime = new Date().getTime();
 function debugMsg(msg: string) {
   console.log(`[${(new Date().getTime() - startTime)}]\t${msg}`)
 }
-const N = 256;
+const N = 64;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl
 function erfinv(x: number) {
   var z;
@@ -32,6 +36,9 @@ function erfinv(x: number) {
     z = 0;
   }
   return z;
+}
+function genRandomMatrix() {
+  return new Array(N).fill(0).map(() => new Array(N).fill(0).map(() => Math.random() * 2 - 1))
 }
 function genRandomOrthogonal() {
   function genRandomVector() {
@@ -71,9 +78,9 @@ function matMulList(a: number[][], b: number[][]) {
   });
 }
 
-debugMsg('Generating orthogonal matrices')
-const matrixAList = genRandomOrthogonal();
-const matrixBList = genRandomOrthogonal();
+debugMsg('Generating random matrices')
+const matrixAList = genRandomMatrix();
+const matrixBList = genRandomMatrix();
 debugMsg('Uploading to GPU')
 const matrixA = new Matrix(N, N, new Float32Array(matrixAList.flat()));
 const matrixB = new Matrix(N, N, new Float32Array(matrixBList.flat()));
@@ -97,10 +104,9 @@ const loopArray = [
     const before = new Date().getTime();
     let matrixC = matrixA.copy();
     matrixC = matrixC.mul(matrixB);
+    matrixC.show();
     const after = new Date().getTime();
     debugMsg(`GPU: ${after - before} ms`);
-
-    matrixC.show();
   },
 ];
 
@@ -110,4 +116,4 @@ let index = 0;
 setInterval(() => {
   index = (index + 1) % loopArray.length;
   loopArray[index]();
-}, 1000);
+}, 100);

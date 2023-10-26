@@ -1,9 +1,7 @@
-export const canvasWidth = 256;
-export const canvasHeight = 256;
-const canvas = document.createElement("canvas");
-canvas.setAttribute("width", `${canvasWidth}`);
-canvas.setAttribute("height", `${canvasHeight}`);
-document.querySelector("body").appendChild(canvas);
+export const canvas = document.createElement("canvas");
+canvas.setAttribute("width", `0`);
+canvas.setAttribute("height", `0`);
+canvas.setAttribute("hidden", "true");
 
 export const gl = canvas.getContext("webgl2");
 if (gl === null) {

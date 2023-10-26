@@ -1,11 +1,10 @@
 import {
-    canvasHeight,
-    canvasWidth,
     copyProgram,
     gl,
     executeProgram,
     matMulProgram,
     showProgram,
+    canvas,
 } from "./init";
 
 export default class Matrix {
@@ -58,9 +57,9 @@ export default class Matrix {
         gl.useProgram(program);
         const widthUniformLocation = gl.getUniformLocation(program, "width");
         const heightUniformLocation = gl.getUniformLocation(program, "height");
-        gl.uniform1f(widthUniformLocation, canvasWidth);
-        gl.uniform1f(heightUniformLocation, canvasHeight);
-        gl.viewport(0, 0, canvasWidth, canvasHeight);
+        gl.uniform1f(widthUniformLocation, canvas.width);
+        gl.uniform1f(heightUniformLocation, canvas.height);
+        gl.viewport(0, 0, canvas.width, canvas.height);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.useProgram(null);
     }
