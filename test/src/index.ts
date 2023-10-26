@@ -6,9 +6,9 @@ matMulCanvas.setAttribute("height", "512")
 
 const startTime = new Date().getTime();
 function debugMsg(msg: string) {
-  console.log(`[${(new Date().getTime() - startTime)}]\t${msg}`)
+  console.debug(`[${(new Date().getTime() - startTime)}]\t${msg}`)
 }
-const N = 64;
+const N = 1024;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl
 function erfinv(x: number) {
   var z;
@@ -87,24 +87,15 @@ const matrixB = new Matrix(N, N, new Float32Array(matrixBList.flat()));
 
 // ----------------- Display -------------------
 
-const label = document.createElement("div");
-document.body.appendChild(label);
+document.body.appendChild(document.createElement("div")).innerText = `N = ${N}`
 const loopArray = [
   () => {
-    label.innerText = "A";
-    matrixA.show();
-  },
-  () => {
-    label.innerText = "B";
-    matrixB.show();
-  },
-  () => {
-    label.innerText = "C";
-
     const before = new Date().getTime();
     let matrixC = matrixA.copy();
-    matrixC = matrixC.mul(matrixB);
-    matrixC.show();
+    for (let i = 0; i < 16; i++) {
+      matrixC = matrixC.mul(matrixB);
+    }
+    matrixC.readData();
     const after = new Date().getTime();
     debugMsg(`GPU: ${after - before} ms`);
   },
@@ -116,4 +107,4 @@ let index = 0;
 setInterval(() => {
   index = (index + 1) % loopArray.length;
   loopArray[index]();
-}, 100);
+}, 5000);

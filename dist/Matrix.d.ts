@@ -13,6 +13,7 @@ export default class Matrix {
     private static unbindOut;
     bindOut(program: WebGLProgram): void;
     bindIn(index: number, program: WebGLProgram): void;
+    readData(): Float32Array;
     /**
      * Displays floating point values to canvas
      */

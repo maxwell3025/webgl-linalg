@@ -1,7 +1,6 @@
 export const canvas = document.createElement("canvas");
 canvas.setAttribute("width", `0`);
 canvas.setAttribute("height", `0`);
-canvas.setAttribute("hidden", "true");
 
 export const gl = canvas.getContext("webgl2");
 if (gl === null) {

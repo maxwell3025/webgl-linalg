@@ -104,6 +104,20 @@ export default class Matrix {
         gl.useProgram(null);
     }
 
+    public readData() {
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            this.texture,
+            0
+        );
+        gl.readBuffer(gl.COLOR_ATTACHMENT0)
+        const out = new Float32Array(this.colCount * this.rowCount)
+        gl.readPixels(0, 0, this.colCount, this.rowCount, gl.RED, gl.FLOAT, out);
+        return out;
+    }
+
     /**
      * Displays floating point values to canvas
      */
