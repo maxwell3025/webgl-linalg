@@ -1,4 +1,4 @@
-import { Matrix } from "../../src";
+import { Matrix } from "../..";
 
 const N = 256;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl

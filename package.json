@@ -4,13 +4,20 @@
     "typescript": "^5.0.0"
   },
   "name": "webgl-linalg",
+  "version": "1.0.0",
+  "description": "Linear algebra with WebGL2",
   "module": "index.ts",
-  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
+  "files": [
+    "/dist"
+  ],
   "scripts": {
     "build:library": "tsc",
     "build:test": "webpack --config ./test/webpack.config.cjs"
   },
   "devDependencies": {
+    "@types/node": "^20.8.9",
     "@webpack-cli/generators": "^3.0.7",
     "bun-types": "latest",
     "webpack": "^5.89.0",
