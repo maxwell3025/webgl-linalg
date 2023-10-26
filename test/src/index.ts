@@ -1,6 +1,6 @@
 import { Matrix } from "../..";
 
-const N = 4;
+const N = 256;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl
 function erfinv(x: number) {
   var z;

@@ -14,10 +14,6 @@ export default class Matrix {
     bindOut(program: WebGLProgram): void;
     bindIn(index: number, program: WebGLProgram): void;
     /**
-     * displays floating point values to canvas
-     */
-    showRaw(channel: number): void;
-    /**
      * Displays floating point values to canvas
      */
     show(): void;

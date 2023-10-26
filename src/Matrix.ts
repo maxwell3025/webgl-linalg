@@ -2,7 +2,6 @@ import {
     canvasHeight,
     canvasWidth,
     copyProgram,
-    showChannelProgram,
     gl,
     executeProgram,
     matMulProgram,
@@ -28,14 +27,12 @@ export default class Matrix {
         this.buffer = gl.createFramebuffer();
 
         //generate&format data
-        const data = floatData
-            ? new Uint8Array(floatData.buffer)
-            : new Uint8Array(colCount * rowCount * 4).fill(0);
-        if (data.constructor !== Uint8Array) {
+        const data = floatData ?? new Float32Array(this.colCount * this.rowCount).fill(0);
+        if (data.constructor !== Float32Array) {
             console.error("IMPROPER DATA TYPE");
         }
-        if (data.length != colCount * rowCount * 4) {
-            console.error("IMPROPERLY SIZED DATA");
+        if (data.length != this.colCount * this.rowCount) {
+            console.error(`IMPROPERLY SIZED DATA: ${data.length} != ${this.colCount * this.rowCount}`);
         }
 
         //upload data
@@ -47,12 +44,12 @@ export default class Matrix {
         gl.texImage2D(
             gl.TEXTURE_2D,
             0,
-            gl.RGBA8UI,
-            colCount,
-            rowCount,
+            gl.R32F,
+            this.colCount,
+            this.rowCount,
             0,
-            gl.RGBA_INTEGER,
-            gl.UNSIGNED_BYTE,
+            gl.RED,
+            gl.FLOAT,
             data
         );
     }
@@ -106,17 +103,6 @@ export default class Matrix {
         gl.activeTexture(gl.TEXTURE0 + index);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.useProgram(null);
-    }
-
-    /**
-     * displays floating point values to canvas
-     */
-    public showRaw(channel: number) {
-        this.bindIn(0, showChannelProgram[channel]);
-        Matrix.unbindOut(showChannelProgram[channel]);
-        gl.useProgram(null);
-
-        executeProgram(showChannelProgram[channel]);
     }
 
     /**
