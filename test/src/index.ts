@@ -1,5 +1,9 @@
 import { Matrix } from "../..";
 
+const startTime = new Date().getTime();
+function debugMsg(msg: string) {
+  console.log(`[${(new Date().getTime() - startTime)}]\t${msg}`)
+}
 const N = 256;
 //from https://stackoverflow.com/questions/12556685/is-there-a-javascript-implementation-of-the-inverse-error-function-akin-to-matl
 function erfinv(x: number) {
@@ -67,8 +71,10 @@ function matMulList(a: number[][], b: number[][]) {
   });
 }
 
+debugMsg('Generating orthogonal matrices')
 const matrixAList = genRandomOrthogonal();
 const matrixBList = genRandomOrthogonal();
+debugMsg('Uploading to GPU')
 const matrixA = new Matrix(N, N, new Float32Array(matrixAList.flat()));
 const matrixB = new Matrix(N, N, new Float32Array(matrixBList.flat()));
 
@@ -92,20 +98,16 @@ const loopArray = [
     let matrixC = matrixA.copy();
     matrixC = matrixC.mul(matrixB);
     const after = new Date().getTime();
-    console.log(after - before);
-
-    const before2 = new Date().getTime();
-    let matrixCList = matrixAList.map((row) => row.map((elem) => elem));
-    matrixCList = matMulList(matrixCList, matrixBList);
-    const after2 = new Date().getTime();
-    console.log(after2 - before2);
+    debugMsg(`GPU: ${after - before} ms`);
 
     matrixC.show();
   },
 ];
 
+debugMsg("Displaying results")
+loopArray[0]();
 let index = 0;
 setInterval(() => {
   index = (index + 1) % loopArray.length;
   loopArray[index]();
-}, 2000);
+}, 1000);
