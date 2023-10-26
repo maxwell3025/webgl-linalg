@@ -1,5 +1,5 @@
-export const canvasWidth = 512;
-export const canvasHeight = 512;
+export const canvasWidth = 1024;
+export const canvasHeight = 1024;
 const canvas = document.createElement("canvas");
 canvas.setAttribute("width", `${canvasWidth}`);
 canvas.setAttribute("height", `${canvasHeight}`);

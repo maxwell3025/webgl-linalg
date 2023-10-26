@@ -1,21 +1,22 @@
-  {
-    "compilerOptions": {
-      "lib": [
-        "es5",
-        "es6",
-        "es2019",
-        "dom"
-      ],
-      "outDir": "./dist/",
-      "declaration": true,
-      "sourceMap": true,
-      "noImplicitAny": true,
-      "module": "ESNext",
-      "target": "es6",
-      "moduleResolution": "Node",
-      "jsx": "react"
-    },
-    "include": [
-      "./src/**/*"
-    ]
-  }
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6",
+      "es2019",
+      "dom"
+    ],
+    "outDir": "./dist/",
+    "declaration": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "module": "ESNext",
+    "target": "es6",
+    "moduleResolution": "Node",
+    "jsx": "react"
+  },
+  "include": [
+    "./src/**/*",
+    "test/src/index.ts"
+  ]
+}
