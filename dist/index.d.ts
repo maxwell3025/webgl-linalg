@@ -9,9 +9,9 @@ export declare class Matrix {
      * @param rowCount number of rows
      * @param floatData matrix data in row-major order. Filled with random values in [-1, 1) if undefined.
      */
-    constructor(colCount: number, rowCount: number, floatData?: Float32Array | number);
-    bindTarget(): void;
-    bind(index: number, program: WebGLProgram): void;
+    constructor(colCount: number, rowCount: number, floatData?: Float32Array);
+    bindOut(program: WebGLProgram): void;
+    bindIn(index: number, program: WebGLProgram): void;
     /**
      * displays floating point values to canvas
      */
@@ -24,5 +24,8 @@ export declare class Matrix {
      * Copies data into target matrix
      */
     copy(): Matrix;
+    /**
+     *
+     */
     mul(rhs: Matrix): Matrix;
 }

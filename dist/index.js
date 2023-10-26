@@ -1,6 +1,13 @@
-import { canvasHeight, canvasWidth, copyTexture, debugChannel, fillMesh, gl, matMul, renderTexture, } from "./init";
-function bindDefaultTarget() {
+import { canvasHeight, canvasWidth, copyTexture, debugChannel, gl, executeProgram, matMul, renderTexture, } from "./init";
+function unbindOut(program) {
+    gl.useProgram(program);
+    const widthUniformLocation = gl.getUniformLocation(program, "width");
+    const heightUniformLocation = gl.getUniformLocation(program, "height");
+    gl.uniform1f(widthUniformLocation, canvasWidth);
+    gl.uniform1f(heightUniformLocation, canvasHeight);
+    gl.viewport(0, 0, canvasWidth, canvasHeight);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(null);
 }
 export class Matrix {
     context;
@@ -14,31 +21,40 @@ export class Matrix {
      * @param floatData matrix data in row-major order. Filled with random values in [-1, 1) if undefined.
      */
     constructor(colCount, rowCount, floatData) {
+        //initialize
         this.colCount = colCount;
         this.rowCount = rowCount;
-        const data = new Uint8Array((typeof floatData === "object"
-            ? floatData
-            : new Float32Array(colCount * rowCount).map(() => floatData ?? Math.random() * 2 - 1)).buffer);
         this.texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        this.buffer = gl.createFramebuffer();
+        //generate&format data
+        const data = floatData ? new Uint8Array(floatData.buffer) : new Uint8Array(colCount * rowCount * 4).fill(0);
         if (data.constructor !== Uint8Array) {
             console.error("IMPROPER DATA TYPE");
         }
         if (data.length != colCount * rowCount * 4) {
             console.error("IMPROPERLY SIZED DATA");
         }
+        //upload data
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, colCount, rowCount, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, data);
-        this.buffer = gl.createFramebuffer();
     }
-    bindTarget() {
+    bindOut(program) {
+        gl.useProgram(program);
+        gl.viewport(0, 0, this.colCount, this.rowCount);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.buffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
+        const widthUniformLocation = gl.getUniformLocation(program, "width");
+        const heightUniformLocation = gl.getUniformLocation(program, "height");
+        gl.uniform1f(widthUniformLocation, this.colCount);
+        gl.uniform1f(heightUniformLocation, this.rowCount);
+        gl.useProgram(null);
     }
-    bind(index, program) {
+    bindIn(index, program) {
+        gl.useProgram(program);
         const bindingUniformLocation = gl.getUniformLocation(program, `tex${index}`);
         const widthUniformLocation = gl.getUniformLocation(program, `width${index}`);
         const heightUniformLocation = gl.getUniformLocation(program, `height${index}`);
@@ -47,86 +63,47 @@ export class Matrix {
         gl.uniform1i(bindingUniformLocation, index);
         gl.activeTexture(gl.TEXTURE0 + index);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.useProgram(null);
     }
     /**
      * displays floating point values to canvas
      */
     displayChannel(channel) {
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
-        const aVertexPosition = gl.getAttribLocation(debugChannel[channel], "aVertexPosition");
-        gl.useProgram(debugChannel[channel]);
-        const widthUniformLocation = gl.getUniformLocation(debugChannel[channel], "width");
-        const heightUniformLocation = gl.getUniformLocation(debugChannel[channel], "height");
-        gl.uniform1f(widthUniformLocation, canvasWidth);
-        gl.uniform1f(heightUniformLocation, canvasHeight);
-        gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aVertexPosition);
-        this.bind(0, debugChannel[channel]);
-        bindDefaultTarget();
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        this.bindIn(0, debugChannel[channel]);
+        unbindOut(debugChannel[channel]);
+        gl.useProgram(null);
+        executeProgram(debugChannel[channel]);
     }
     /**
      * displays floating point values to canvas
      */
     display() {
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
-        const aVertexPosition = gl.getAttribLocation(renderTexture, "aVertexPosition");
-        gl.useProgram(renderTexture);
-        const widthUniformLocation = gl.getUniformLocation(renderTexture, "width");
-        const heightUniformLocation = gl.getUniformLocation(renderTexture, "height");
-        gl.uniform1f(widthUniformLocation, canvasWidth);
-        gl.uniform1f(heightUniformLocation, canvasHeight);
-        gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aVertexPosition);
-        this.bind(0, renderTexture);
-        bindDefaultTarget();
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        this.bindIn(0, renderTexture);
+        unbindOut(renderTexture);
+        executeProgram(renderTexture);
     }
     /**
      * Copies data into target matrix
      */
     copy() {
         const result = new Matrix(this.colCount, this.rowCount);
-        result.bindTarget();
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
-        gl.useProgram(copyTexture);
-        const aVertexPosition = gl.getAttribLocation(copyTexture, "aVertexPosition");
-        const widthUniformLocation = gl.getUniformLocation(copyTexture, "width");
-        const heightUniformLocation = gl.getUniformLocation(copyTexture, "height");
-        gl.uniform1f(widthUniformLocation, result.colCount);
-        gl.uniform1f(heightUniformLocation, result.rowCount);
-        gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aVertexPosition);
-        this.bind(0, copyTexture);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        result.bindOut(copyTexture);
+        this.bindIn(0, copyTexture);
+        executeProgram(copyTexture);
         return result;
     }
+    /**
+     *
+     */
     mul(rhs) {
         if (this.colCount != rhs.rowCount) {
-            console.error("Incompatible Dimensions!");
+            console.error("Incompatible dimensions for mul");
         }
         const result = new Matrix(rhs.colCount, this.rowCount);
-        result.bindTarget();
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
-        gl.useProgram(matMul);
-        const aVertexPosition = gl.getAttribLocation(matMul, "aVertexPosition");
-        const widthUniformLocation = gl.getUniformLocation(matMul, "width");
-        const heightUniformLocation = gl.getUniformLocation(matMul, "height");
-        gl.uniform1f(widthUniformLocation, result.colCount);
-        gl.uniform1f(heightUniformLocation, result.rowCount);
-        gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aVertexPosition);
-        this.bind(0, matMul);
-        rhs.bind(1, matMul);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        this.bindIn(0, matMul);
+        rhs.bindIn(1, matMul);
+        result.bindOut(matMul);
+        executeProgram(matMul);
         return result;
     }
 }

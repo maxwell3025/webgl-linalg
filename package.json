@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build:library": "tsc",
-    "build:test": "webpack --config ./test/webpack.config.cjs"
+    "build:test": "bun build:library && webpack --config ./test/webpack.config.cjs"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",

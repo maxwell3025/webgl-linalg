@@ -1,5 +1,5 @@
-export const canvasWidth = 1024;
-export const canvasHeight = 1024;
+export const canvasWidth = 256;
+export const canvasHeight = 256;
 const canvas = document.createElement("canvas");
 canvas.setAttribute("width", `${canvasWidth}`);
 canvas.setAttribute("height", `${canvasHeight}`);
@@ -175,4 +175,17 @@ void main() {
 `
 );
 
-export const fillMesh = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
+const fillMesh = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
+const positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, fillMesh, gl.STATIC_DRAW, 0);
+
+export function executeProgram(program: WebGLProgram){
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
+    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aVertexPosition);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.useProgram(null)
+}
